@@ -27,7 +27,7 @@ function formatBRL(value) {
   }).format(value);
 }
 
-function buildMessage(lead, inputs, results) {
+function buildMessage(lead, inputs, results, resultsUrl) {
   const lines = [
     `Ola ${lead.nome}! 👋`,
     ``,
@@ -63,12 +63,12 @@ function buildMessage(lead, inputs, results) {
     `4. *Sistema de Captacao Inteligente* — otimizar marketing com rastreamento e metricas claras`,
     `5. *Sistema de Indicacoes* — transformar pacientes satisfeitos em promotores da clinica`,
     ``,
+    `📊 *Seu relatorio completo:*`,
+    resultsUrl || 'https://lkdigital.odo.br',
+    ``,
     `---`,
     ``,
     `Quer descobrir como implementar esses sistemas na *${lead.clinica}* e parar de perder dinheiro?`,
-    ``,
-    `📅 Agende uma conversa gratuita com um especialista da LK Digital:`,
-    `https://lkdigital.odo.br/agendar`,
     ``,
     `Qual dessas perdas voce sente que mais impacta a ${lead.clinica} hoje? 😊`,
   ];
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Numero de telefone invalido' });
     }
 
-    const message = buildMessage(lead, inputs, results);
+    const message = buildMessage(lead, inputs, results, resultsUrl);
 
     let messageSent = false;
     let whatsappError = '';

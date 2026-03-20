@@ -9,14 +9,42 @@ import { sendToWebhook } from './utils/webhook';
 import { sendCapiEvent } from './utils/capi';
 import './App.css';
 
+/* ── Shareable URL helpers ── */
+function encodeResultsToHash(lead, inputs, results) {
+  const payload = { l: lead, i: inputs, r: results };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function decodeResultsFromHash(hash) {
+  try {
+    const raw = hash.startsWith('#') ? hash.slice(1) : hash;
+    if (!raw) return null;
+    const json = decodeURIComponent(escape(atob(raw)));
+    const { l, i, r } = JSON.parse(json);
+    return { lead: l, inputs: i, results: r };
+  } catch {
+    return null;
+  }
+}
+
 function App() {
   const [step, setStep] = useState('landing'); // landing | form | teaser | results
   const [inputs, setInputs] = useState(null);
   const [results, setResults] = useState(null);
   const [leadData, setLeadData] = useState(null);
 
-  // PageView on landing
+  // Check for shared results in URL hash on load
   useEffect(() => {
+    const saved = decodeResultsFromHash(window.location.hash);
+    if (saved && saved.results && saved.lead) {
+      // Re-derive breakdown (it has functions/colors that don't serialize well)
+      const fullResults = calculateDiagnostic(saved.inputs);
+      setLeadData(saved.lead);
+      setInputs(saved.inputs);
+      setResults(fullResults);
+      setStep('results');
+      return;
+    }
     sendCapiEvent('PageView');
   }, []);
 
@@ -46,7 +74,26 @@ function App() {
   const handleUnlock = async (lead) => {
     setLeadData(lead);
 
-    const resultsUrl = `${window.location.origin}${window.location.pathname}`;
+    // Build shareable results URL with encoded data
+    const hash = encodeResultsToHash(
+      { nome: lead.nome, clinica: lead.clinica, cidade: lead.cidade },
+      inputs,
+      {
+        perdaTotal: results.perdaTotal,
+        perdaAnual: results.perdaAnual,
+        perdaFaltas: results.perdaFaltas,
+        perdaOrcamentos: results.perdaOrcamentos,
+        perdaRetorno: results.perdaRetorno,
+        desperdicioMarketing: results.desperdicioMarketing,
+        receitaAtual: results.receitaAtual,
+        receitaPotencial: results.receitaPotencial,
+        custoPorPaciente: results.custoPorPaciente,
+        faltasPorMes: results.faltasPorMes,
+        orcamentosRecusados: results.orcamentosRecusados,
+        pacientesQueNaoVoltam: results.pacientesQueNaoVoltam,
+      },
+    );
+    const resultsUrl = `${window.location.origin}${window.location.pathname}#${hash}`;
 
     // Send to Google Sheet
     sendToSheet({
@@ -111,6 +158,9 @@ function App() {
         currency: 'BRL',
       },
     });
+
+    // Update browser URL so user can also bookmark/share
+    window.history.replaceState(null, '', resultsUrl);
 
     setStep('results');
     window.scrollTo(0, 0);
