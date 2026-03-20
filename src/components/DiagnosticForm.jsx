@@ -10,7 +10,7 @@ const defaultValues = {
   novosPacientes: '',
 };
 
-export default function DiagnosticForm({ leadData, onCalculate }) {
+export default function DiagnosticForm({ onCalculate }) {
   const [inputs, setInputs] = useState(defaultValues);
 
   const update = (field, value) => {
@@ -38,7 +38,7 @@ export default function DiagnosticForm({ leadData, onCalculate }) {
         </div>
 
         <div className="diagnostic-header fade-up">
-          <h2>Diagnóstico de {leadData.clinica}</h2>
+          <h2>Diagnóstico da Sua Clínica</h2>
           <p>
             Preencha com os números reais da sua clínica. Não precisa ser exato
             — uma estimativa já revela muito.
