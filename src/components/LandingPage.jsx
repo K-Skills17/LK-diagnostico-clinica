@@ -1,9 +1,7 @@
 export default function LandingPage({ onStart }) {
   return (
     <div className="landing">
-      <div className="landing-logo">
-        LK <span>Digital</span>
-      </div>
+      <img src="/logo.svg" alt="LK Digital" className="landing-logo-img" />
 
       <h1 className="fade-up">
         Descubra quanto dinheiro seu consultório está <em>perdendo</em>
