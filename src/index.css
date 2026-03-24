@@ -106,7 +106,7 @@ h1, h2, h3, h4 {
 
 .btn-primary {
   padding: 16px 32px;
-  background: var(--accent);
+  background: #9E7E3C;
   color: white;
   border: none;
   border-radius: 8px;
@@ -119,7 +119,7 @@ h1, h2, h3, h4 {
 }
 
 .btn-primary:hover {
-  background: #B8944D;
+  background: #8A6E34;
   transform: translateY(-1px);
 }
 
@@ -145,7 +145,7 @@ h1, h2, h3, h4 {
   font-family: 'Cormorant Garamond', serif;
   font-size: 36px;
   font-weight: 700;
-  color: var(--accent);
+  color: #7D6530;
 }
 
 .landing-feature p {
@@ -567,7 +567,7 @@ h1, h2, h3, h4 {
 }
 
 .footer a {
-  color: var(--accent);
+  color: #7D6530;
   text-decoration: none;
 }
 

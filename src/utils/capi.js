@@ -31,7 +31,8 @@ export async function sendCapiEvent(eventName, { email, phone, nome, cidade, cus
   const eventId = generateEventId();
 
   // Fire browser pixel event with matching event_id for dedup
-  if (window.fbq) {
+  // FB pixel is deferred — queue events if not yet loaded
+  if (typeof window.fbq === 'function') {
     window.fbq('track', eventName, customData || {}, { eventID: eventId });
   }
 
@@ -68,7 +69,7 @@ export async function sendCapiEvent(eventName, { email, phone, nome, cidade, cus
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: [eventData] }),
     });
-  } catch (err) {
-    console.error('CAPI proxy request failed:', err);
+  } catch {
+    // Silently fail — CAPI is non-critical analytics
   }
 }

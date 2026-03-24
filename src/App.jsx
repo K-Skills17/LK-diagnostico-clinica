@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import LandingPage from './components/LandingPage';
-import DiagnosticForm from './components/DiagnosticForm';
-import TeaserGate from './components/TeaserGate';
-import ResultsDashboard from './components/ResultsDashboard';
 import { calculateDiagnostic } from './utils/calculations';
-import { sendToSheet } from './utils/sheets';
-import { sendToWebhook } from './utils/webhook';
 import { sendCapiEvent } from './utils/capi';
 import './App.css';
+
+// Lazy-load non-critical components to reduce initial bundle size
+const DiagnosticForm = lazy(() => import('./components/DiagnosticForm'));
+const TeaserGate = lazy(() => import('./components/TeaserGate'));
+const ResultsDashboard = lazy(() => import('./components/ResultsDashboard'));
 
 /* ── Shareable URL helpers ── */
 function encodeResultsToHash(lead, inputs, results) {
@@ -73,6 +73,12 @@ function App() {
 
   const handleUnlock = async (lead) => {
     setLeadData(lead);
+
+    // Dynamically import non-critical utils only when needed
+    const [{ sendToSheet }, { sendToWebhook }] = await Promise.all([
+      import('./utils/sheets'),
+      import('./utils/webhook'),
+    ]);
 
     // Build shareable results URL with encoded data
     const hash = encodeResultsToHash(
@@ -169,13 +175,15 @@ function App() {
   return (
     <>
       {step === 'landing' && <LandingPage onStart={handleStart} />}
-      {step === 'form' && <DiagnosticForm onCalculate={handleCalculate} />}
-      {step === 'teaser' && (
-        <TeaserGate results={results} onUnlock={handleUnlock} />
-      )}
-      {step === 'results' && (
-        <ResultsDashboard results={results} leadData={leadData} />
-      )}
+      <Suspense fallback={null}>
+        {step === 'form' && <DiagnosticForm onCalculate={handleCalculate} />}
+        {step === 'teaser' && (
+          <TeaserGate results={results} onUnlock={handleUnlock} />
+        )}
+        {step === 'results' && (
+          <ResultsDashboard results={results} leadData={leadData} />
+        )}
+      </Suspense>
     </>
   );
 }
