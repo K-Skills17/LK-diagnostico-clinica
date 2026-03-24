@@ -8,28 +8,36 @@
     <meta name="theme-color" content="#C4A265" />
     <meta name="description" content="Descubra quanto dinheiro seu consultório odontológico está perdendo por mês. Ferramenta gratuita de diagnóstico financeiro." />
     <title>Diagnóstico Financeiro da Clínica | LK Digital</title>
-    <!-- Facebook Pixel (browser) — dedup with CAPI via event_id -->
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '812107305229720');
-    </script>
+    <!-- Preconnect to critical origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preload LCP image -->
+    <link rel="preload" href="/logo.svg" as="image" />
   </head>
   <body>
+    <main id="root"></main>
+    <script type="module" src="/src/main.jsx"></script>
+    <!-- Defer Facebook Pixel — load after 3s to avoid blocking main thread -->
+    <script>
+      setTimeout(function () {
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '812107305229720');
+        fbq('track', 'PageView');
+      }, 3000);
+    </script>
     <noscript><img height="1" width="1" style="display:none"
       src="https://www.facebook.com/tr?id=812107305229720&ev=PageView&noscript=1"
     /></noscript>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
+        window.addEventListener('load', function () {
           navigator.serviceWorker.register('/sw.js');
         });
       }
