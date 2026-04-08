@@ -157,6 +157,15 @@ export default function TeaserGate({ results, onUnlock }) {
             <div className="gate-trust">
               Seus dados estão seguros. Sem spam.
             </div>
+
+            {/* Contact Info */}
+            <div className="contact-section">
+              <p>Precisa de ajuda? Fale conosco:</p>
+              <div className="contact-links">
+                <a href="mailto:contato@lkdigital.org">📧 contato@lkdigital.org</a>
+                <a href="tel:+5511946851028">📞 (11) 94685-1028</a>
+              </div>
+            </div>
           </div>
         </div>
 
