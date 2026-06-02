@@ -5,11 +5,6 @@ const LK_CHATBOT_URL = process.env.LK_CHATBOT_URL;
 const LK_CHATBOT_API_KEY = process.env.LK_CHATBOT_API_KEY;
 const LK_CHATBOT_TENANT_ID = process.env.LK_CHATBOT_TENANT_ID;
 
-// Evolution API fallback
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL;
-const EVOLUTION_API_INSTANCE = process.env.EVOLUTION_API_INSTANCE;
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
-
 function formatPhone(phone) {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('55') && digits.length >= 12) return digits;
@@ -145,40 +140,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // Fallback: Evolution API direct send
-    if (!messageSent && EVOLUTION_API_URL && EVOLUTION_API_INSTANCE && EVOLUTION_API_KEY) {
-      try {
-        const evoUrl = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_API_INSTANCE}`;
-        console.log('Evolution API fallback:', { url: evoUrl, phone: formattedPhone });
-
-        const evolutionRes = await fetch(evoUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': EVOLUTION_API_KEY,
-          },
-          body: JSON.stringify({
-            number: formattedPhone,
-            text: message,
-          }),
-        });
-
-        const responseText = await evolutionRes.text();
-        console.log('Evolution API response:', evolutionRes.status, responseText);
-
-        if (evolutionRes.ok) {
-          messageSent = true;
-          whatsappError = '';
-        } else {
-          whatsappError = `Evolution API ${evolutionRes.status}: ${responseText}`;
-        }
-      } catch (err) {
-        whatsappError = `Evolution fetch error: ${err.message || String(err)}`;
-        console.error('Evolution API error:', err);
-      }
-    } else if (!messageSent && !whatsappError) {
-      whatsappError = 'No messaging service configured';
-      console.error('Neither chatbot webhook nor Evolution API configured');
+    if (!messageSent && !whatsappError) {
+      whatsappError = 'Chatbot webhook not configured';
     }
 
     return res.status(200).json({
