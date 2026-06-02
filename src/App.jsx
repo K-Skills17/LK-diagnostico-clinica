@@ -71,7 +71,7 @@ function App() {
     });
   };
 
-  const handleUnlock = async (lead) => {
+  const handleUnlock = (lead) => {
     setLeadData(lead);
 
     // Build shareable results URL with encoded data
@@ -95,7 +95,7 @@ function App() {
     );
     const resultsUrl = `${window.location.origin}${window.location.pathname}#${hash}`;
 
-    // Send to Google Sheet
+    // Send to Google Sheet (fire and forget, don't block the user)
     sendToSheet({
       ...lead,
       ...inputs,
@@ -110,8 +110,8 @@ function App() {
       custoPorPaciente: results.custoPorPaciente,
     });
 
-    // Send to chatbot webhook
-    await sendToWebhook({
+    // Send to chatbot webhook — don't block results on failure
+    sendToWebhook({
       lead: {
         nome: lead.nome,
         clinica: lead.clinica,
@@ -174,7 +174,7 @@ function App() {
         <TeaserGate results={results} onUnlock={handleUnlock} />
       )}
       {step === 'results' && (
-        <ResultsDashboard results={results} leadData={leadData} />
+        <ResultsDashboard results={results} leadData={leadData} inputs={inputs} />
       )}
     </>
   );

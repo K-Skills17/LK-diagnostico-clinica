@@ -6,7 +6,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import { formatCurrency } from '../utils/calculations';
+import { formatCurrency, BENCHMARKS, getRating } from '../utils/calculations';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { WHATSAPP_NUMBER } from '../config';
@@ -62,8 +62,47 @@ function CustomTooltip({ active, payload }) {
   return null;
 }
 
-export default function ResultsDashboard({ results, leadData }) {
+const RATING_COLORS = {
+  good: '#27AE60',
+  average: '#F39C12',
+  bad: '#E74C3C',
+};
+
+const RATING_LABELS = {
+  good: 'Bom',
+  average: 'Na Média',
+  bad: 'Precisa Melhorar',
+};
+
+export default function ResultsDashboard({ results, leadData, inputs }) {
   const dashboardRef = useRef(null);
+
+  const benchmarkData = [
+    {
+      key: 'taxaFaltas',
+      value: inputs.taxaFaltas,
+      display: `${inputs.taxaFaltas}%`,
+      idealDisplay: `${BENCHMARKS.taxaFaltas.ideal}%`,
+    },
+    {
+      key: 'taxaAceite',
+      value: inputs.taxaAceite,
+      display: `${inputs.taxaAceite}%`,
+      idealDisplay: `${BENCHMARKS.taxaAceite.ideal}%`,
+    },
+    {
+      key: 'taxaRetorno',
+      value: inputs.taxaRetorno,
+      display: `${inputs.taxaRetorno}%`,
+      idealDisplay: `${BENCHMARKS.taxaRetorno.ideal}%`,
+    },
+    {
+      key: 'custoPorPaciente',
+      value: results.custoPorPaciente,
+      display: formatCurrency(results.custoPorPaciente),
+      idealDisplay: results.custoIdeal > 0 ? formatCurrency(results.custoIdeal) : '—',
+    },
+  ];
 
   const whatsappMessage = encodeURIComponent(
     `Olá! Acabei de fazer o Diagnóstico Financeiro da minha clínica "${leadData.clinica}" e descobri que posso estar perdendo ${formatCurrency(results.perdaAnual)} por ano. Gostaria de saber como vocês podem me ajudar a corrigir isso.`
@@ -79,27 +118,36 @@ export default function ResultsDashboard({ results, leadData }) {
         backgroundColor: '#FAFAF8',
         useCORS: true,
       });
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pageWidth - 20;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const usableWidth = pageWidth - margin * 2;
+      const usableHeight = pageHeight - margin * 2;
+
+      const imgWidth = usableWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let yPosition = 10;
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      if (imgHeight <= pageHeight - 20) {
-        pdf.addImage(imgData, 'PNG', 10, yPosition, imgWidth, imgHeight);
+      if (imgHeight <= usableHeight) {
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
       } else {
-        // Multi-page
-        let remainingHeight = imgHeight;
-        let sourceY = 0;
-        while (remainingHeight > 0) {
-          const sliceHeight = Math.min(pageHeight - 20, remainingHeight);
-          pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight, undefined, 'FAST', 0, -sourceY * (imgWidth / canvas.width));
-          remainingHeight -= sliceHeight;
-          sourceY += sliceHeight;
-          if (remainingHeight > 0) pdf.addPage();
+        const totalPages = Math.ceil(imgHeight / usableHeight);
+        for (let page = 0; page < totalPages; page++) {
+          if (page > 0) pdf.addPage();
+          const sourceY = page * usableHeight * (canvas.width / imgWidth);
+          const sourceHeight = Math.min(
+            usableHeight * (canvas.width / imgWidth),
+            canvas.height - sourceY
+          );
+          const sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = canvas.width;
+          sliceCanvas.height = sourceHeight;
+          const ctx = sliceCanvas.getContext('2d');
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+          const sliceData = sliceCanvas.toDataURL('image/png');
+          const sliceImgHeight = (sourceHeight * imgWidth) / canvas.width;
+          pdf.addImage(sliceData, 'PNG', margin, margin, imgWidth, sliceImgHeight);
         }
       }
 
@@ -168,6 +216,37 @@ export default function ResultsDashboard({ results, leadData }) {
             <div className="loss-detail">
               Custo por paciente: {formatCurrency(results.custoPorPaciente)}
             </div>
+          </div>
+        </div>
+
+        {/* Conversion Rate Benchmarks */}
+        <div className="benchmark-section fade-up">
+          <h3>Suas Taxas vs. Melhores Clinicas</h3>
+          <div className="benchmark-cards">
+            {benchmarkData.map((item) => {
+              const b = BENCHMARKS[item.key];
+              const rating = item.key === 'custoPorPaciente'
+                ? (results.custoIdeal > 0
+                  ? (item.value <= results.custoIdeal ? 'good' : item.value <= results.custoIdeal * 2 ? 'average' : 'bad')
+                  : null)
+                : getRating(item.key, item.value);
+              return (
+                <div className="benchmark-card" key={item.key}>
+                  <div className="benchmark-label">{b.label}</div>
+                  <div className="benchmark-value" style={{ color: rating ? RATING_COLORS[rating] : '#1A1A1A' }}>
+                    {item.display}
+                  </div>
+                  {rating && (
+                    <div className="benchmark-badge" style={{ background: RATING_COLORS[rating] }}>
+                      {RATING_LABELS[rating]}
+                    </div>
+                  )}
+                  <div className="benchmark-ideal">
+                    Referencia: {item.idealDisplay}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

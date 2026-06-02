@@ -224,6 +224,16 @@ h1, h2, h3, h4 {
   border-color: var(--accent);
 }
 
+.field-error {
+  font-size: 12px;
+  color: var(--red);
+  font-weight: 500;
+}
+
+.form-group input.invalid {
+  border-color: var(--red);
+}
+
 .form-actions {
   text-align: center;
   margin-top: 40px;
@@ -339,6 +349,66 @@ h1, h2, h3, h4 {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+/* Benchmark Section */
+.benchmark-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 32px;
+}
+
+.benchmark-section h3 {
+  font-size: 20px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.benchmark-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.benchmark-card {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.benchmark-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.benchmark-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.benchmark-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.benchmark-ideal {
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 /* Revenue comparison */
@@ -751,6 +821,10 @@ h1, h2, h3, h4 {
   }
 
   .loss-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .benchmark-cards {
     grid-template-columns: 1fr;
   }
 

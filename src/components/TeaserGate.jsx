@@ -36,11 +36,11 @@ export default function TeaserGate({ results, onUnlock }) {
     setForm({ ...form, whatsapp: formatWhatsApp(e.target.value) });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!isValid || submitting) return;
     setSubmitting(true);
-    await onUnlock(form);
+    onUnlock(form);
   };
 
   return (

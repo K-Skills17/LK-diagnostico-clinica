@@ -1,3 +1,23 @@
+export const BENCHMARKS = {
+  taxaFaltas: { ideal: 10, average: 20, label: 'Taxa de Faltas', unit: '%', lowerIsBetter: true },
+  taxaAceite: { ideal: 65, average: 45, label: 'Taxa de Aceite de Orcamento', unit: '%', lowerIsBetter: false },
+  taxaRetorno: { ideal: 70, average: 40, label: 'Taxa de Retorno', unit: '%', lowerIsBetter: false },
+  custoPorPaciente: { ideal: null, average: null, label: 'Custo por Paciente', unit: 'R$', lowerIsBetter: true },
+};
+
+export function getRating(key, value) {
+  const b = BENCHMARKS[key];
+  if (!b || b.ideal === null) return null;
+  if (b.lowerIsBetter) {
+    if (value <= b.ideal) return 'good';
+    if (value <= b.average) return 'average';
+    return 'bad';
+  }
+  if (value >= b.ideal) return 'good';
+  if (value >= b.average) return 'average';
+  return 'bad';
+}
+
 export function calculateDiagnostic(inputs) {
   const {
     pacientesAgendados,
@@ -48,6 +68,7 @@ export function calculateDiagnostic(inputs) {
     orcamentosRecusados,
     pacientesQueNaoVoltam,
     custoPorPaciente,
+    custoIdeal,
 
     // Revenue comparison
     receitaAtual,
