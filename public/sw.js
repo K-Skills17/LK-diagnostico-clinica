@@ -1,19 +1,29 @@
-const CACHE_NAME = 'diagnostico-clinica-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-];
+const CACHE_NAME = 'diagnostico-clinica-v2';
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+    caches.keys().then((names) =>
+      Promise.all(
+        names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+      )
+    )
   );
 });
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok && event.request.method === 'GET') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
