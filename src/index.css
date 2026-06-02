@@ -890,3 +890,63 @@ h1, h2, h3, h4 {
 .progress-step.active {
   background: var(--accent);
 }
+
+/* PDF high-contrast mode — applied during html2canvas capture */
+.pdf-mode {
+  background: #FFFFFF;
+}
+
+.pdf-mode .loss-card .loss-title,
+.pdf-mode .form-group label,
+.pdf-mode .benchmark-label,
+.pdf-mode .system-desc,
+.pdf-mode .loss-card .loss-detail,
+.pdf-mode .revenue-bar-label,
+.pdf-mode .results-header .clinic-name,
+.pdf-mode .benchmark-ideal,
+.pdf-mode .system-number,
+.pdf-mode .recovery-label {
+  color: #333333;
+}
+
+.pdf-mode .big-number-card .label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pdf-mode .big-number-card .annual {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.pdf-mode .loss-card,
+.pdf-mode .revenue-comparison,
+.pdf-mode .chart-section,
+.pdf-mode .system-card,
+.pdf-mode .benchmark-section,
+.pdf-mode .benchmark-card,
+.pdf-mode .contact-section {
+  border-color: #CCCCCC;
+}
+
+.pdf-mode .benchmark-card {
+  background: #F5F5F5;
+}
+
+.pdf-mode .revenue-bar-track {
+  background: #E0E0E0;
+}
+
+.pdf-mode .cta-section p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.pdf-mode .system-name {
+  color: #1A1A1A;
+}
+
+.pdf-mode .plan-subtitle {
+  color: #333333;
+}
+
+.pdf-mode .footer {
+  color: #555555;
+}

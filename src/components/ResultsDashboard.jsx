@@ -113,11 +113,13 @@ export default function ResultsDashboard({ results, leadData, inputs }) {
   const handleExportPDF = async () => {
     if (!dashboardRef.current) return;
     try {
+      dashboardRef.current.classList.add('pdf-mode');
       const canvas = await html2canvas(dashboardRef.current, {
         scale: 2,
-        backgroundColor: '#FAFAF8',
+        backgroundColor: '#FFFFFF',
         useCORS: true,
       });
+      dashboardRef.current.classList.remove('pdf-mode');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
