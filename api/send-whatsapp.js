@@ -1,6 +1,8 @@
 // Vercel Serverless Function — formats diagnostic report and sends via chatbot webhook
 // Mirrors the pattern from Fb-lead-audit-tool's /api/send-whatsapp
 
+import Anthropic from '@anthropic-ai/sdk';
+
 const LK_CHATBOT_URL = process.env.LK_CHATBOT_URL;
 const LK_CHATBOT_API_KEY = process.env.LK_CHATBOT_API_KEY;
 const LK_CHATBOT_TENANT_ID = process.env.LK_CHATBOT_TENANT_ID;
@@ -22,7 +24,67 @@ function formatBRL(value) {
   }).format(value);
 }
 
-function buildMessage(lead, inputs, results, resultsUrl) {
+// --- Claude AI analysis ---
+
+async function generateActionPlan(lead, inputs, results) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.warn('ANTHROPIC_API_KEY not configured — skipping AI analysis');
+    return null;
+  }
+
+  const client = new Anthropic({ apiKey });
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    messages: [
+      {
+        role: 'user',
+        content: `Voce e um consultor financeiro especializado em clinicas odontologicas no Brasil. Analise o diagnostico financeiro desta clinica e crie um plano de acao personalizado com 3-4 recomendacoes especificas.
+
+DADOS DA CLINICA:
+- Clinica: ${lead.clinica}
+- Cidade: ${lead.cidade || 'Nao informada'}
+
+DIAGNOSTICO FINANCEIRO:
+- Receita atual: ${formatBRL(results.receitaAtual)}/mes
+- Receita potencial: ${formatBRL(results.receitaPotencial)}/mes
+- Perda total: ${formatBRL(results.perdaTotal)}/mes (${formatBRL(results.perdaAnual)}/ano)
+
+DETALHAMENTO DAS PERDAS:
+- Faltas: ${formatBRL(results.perdaFaltas)}/mes (${results.faltasPorMes} pacientes/mes)
+- Orcamentos recusados: ${formatBRL(results.perdaOrcamentos)}/mes (${results.orcamentosRecusados} recusas/mes)
+- Pacientes que nao retornam: ${formatBRL(results.perdaRetorno)}/mes (${results.pacientesQueNaoVoltam} pacientes)
+- Desperdicio em marketing: ${formatBRL(results.desperdicioMarketing)}/mes (custo por paciente: ${formatBRL(results.custoPorPaciente)})
+
+DADOS DE ENTRADA:
+- Cadeiras: ${inputs.cadeiras || 'N/A'}
+- Ticket medio: ${formatBRL(inputs.ticketMedio || 0)}
+- Pacientes/mes: ${inputs.pacientesMes || 'N/A'}
+- Taxa de faltas: ${inputs.taxaFaltas || 'N/A'}%
+- Investimento em marketing: ${formatBRL(inputs.investimentoMarketing || 0)}/mes
+
+INSTRUCOES:
+- Escreva em portugues brasileiro, tom profissional mas amigavel
+- De exatamente 3-4 acoes prioritarias, cada uma com 1-2 frases curtas
+- Foque nas acoes que trariam mais receita imediata baseado nos dados acima
+- Seja especifico — use os numeros do diagnostico para justificar cada acao
+- Priorize pela maior perda financeira primeiro
+- NAO use markdown. Use formatacao WhatsApp: *negrito* para destaques
+- Mantenha CURTO — maximo 500 caracteres no total do plano
+- Retorne APENAS o plano de acao numerado (1. 2. 3. 4.), sem introducao ou conclusao`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((b) => b.type === 'text');
+  return textBlock ? textBlock.text : null;
+}
+
+// --- Message builder ---
+
+function buildMessage(lead, inputs, results, resultsUrl, actionPlan) {
   const lines = [
     `Ola ${lead.nome}! 👋`,
     ``,
@@ -47,26 +109,44 @@ function buildMessage(lead, inputs, results, resultsUrl) {
     ``,
     `📈 *Receita atual:* ${formatBRL(results.receitaAtual)}/mes`,
     `📈 *Receita potencial:* ${formatBRL(results.receitaPotencial)}/mes`,
-    ``,
-    `---`,
-    ``,
-    `🔧 *5 sistemas para corrigir essas perdas:*`,
-    ``,
-    `1. *Sistema de Confirmacao* — confirmacoes automaticas via WhatsApp para reduzir faltas`,
-    `2. *Sistema de Follow-up* — acompanhamento de orcamentos pendentes com mensagens personalizadas`,
-    `3. *Sistema de Reativacao* — campanhas automaticas para trazer pacientes inativos de volta`,
-    `4. *Sistema de Captacao Inteligente* — otimizar marketing com rastreamento e metricas claras`,
-    `5. *Sistema de Indicacoes* — transformar pacientes satisfeitos em promotores da clinica`,
+  ];
+
+  if (actionPlan) {
+    lines.push(
+      ``,
+      `---`,
+      ``,
+      `🎯 *Seu plano de acao personalizado (IA):*`,
+      ``,
+      actionPlan,
+    );
+  } else {
+    // Fallback: generic 5-system recommendations if AI is unavailable
+    lines.push(
+      ``,
+      `---`,
+      ``,
+      `🔧 *5 sistemas para corrigir essas perdas:*`,
+      ``,
+      `1. *Sistema de Confirmacao* — confirmacoes automaticas via WhatsApp para reduzir faltas`,
+      `2. *Sistema de Follow-up* — acompanhamento de orcamentos pendentes com mensagens personalizadas`,
+      `3. *Sistema de Reativacao* — campanhas automaticas para trazer pacientes inativos de volta`,
+      `4. *Sistema de Captacao Inteligente* — otimizar marketing com rastreamento e metricas claras`,
+      `5. *Sistema de Indicacoes* — transformar pacientes satisfeitos em promotores da clinica`,
+    );
+  }
+
+  lines.push(
     ``,
     `📊 *Seu relatorio completo:*`,
     resultsUrl || 'https://lkdigital.odo.br',
     ``,
     `---`,
     ``,
-    `Quer descobrir como implementar esses sistemas na *${lead.clinica}* e parar de perder dinheiro?`,
+    `Quer descobrir como implementar essas acoes na *${lead.clinica}* e parar de perder dinheiro?`,
     ``,
     `Qual dessas perdas voce sente que mais impacta a ${lead.clinica} hoje? 😊`,
-  ];
+  );
 
   return lines.join('\n');
 }
@@ -92,7 +172,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Numero de telefone invalido' });
     }
 
-    const message = buildMessage(lead, inputs, results, resultsUrl);
+    // Run AI analysis in parallel with other async work (CAPI is handled client-side)
+    const actionPlan = await generateActionPlan(lead, inputs, results).catch((err) => {
+      console.error('Claude AI error:', err);
+      return null;
+    });
+
+    const message = buildMessage(lead, inputs, results, resultsUrl, actionPlan);
 
     let messageSent = false;
     let whatsappError = '';
@@ -147,6 +233,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       messageSent,
+      aiPlanGenerated: !!actionPlan,
       whatsappError: messageSent ? undefined : whatsappError,
     });
   } catch (err) {
